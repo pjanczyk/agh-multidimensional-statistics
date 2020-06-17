@@ -1,0 +1,97 @@
+---
+title: "Statystyka Wielowymiarowa — Projekt"
+author: "Piotr Janczyk, Miłosz Janowski"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(leaps)
+set.seed(1)
+```
+
+# Zbiór danych
+
+```{r}
+diamonds <- read.csv("diamonds.csv", header = TRUE, stringsAsFactors = TRUE)
+
+colnames(diamonds)
+
+# Usunięcie liczb porządkowych
+diamonds$X <- NULL
+
+# Konwersja zmiennych typu factor na liczby
+diamonds$color <- factor(diamonds$color,
+                        levels = c("D", "E", "F", "G", "H", "I", "J"),
+                        ordered = TRUE)
+diamonds$color <- as.numeric(diamonds$color)
+
+diamonds$clarity <- factor(diamonds$clarity,
+                          levels = c("I1", "SI2", "SI1", "VS2", "VS1", "VVS2", "VVS1", "IF"),
+                          ordered = TRUE)
+diamonds$clarity <- as.numeric(diamonds$clarity)
+
+diamonds$cut <- factor(diamonds$cut,
+                      levels = c("Fair", "Good", "Very Good", "Premium", "Ideal"),
+                      ordered = TRUE)
+diamonds$cut <- as.numeric(diamonds$cut)
+```
+
+# Podział na zbiór treningowy i testowy
+
+```{r}
+n <- nrow(diamonds)
+train <- sample(1:n, n / 2)
+test <- -train
+```
+
+# Regresja liniowa
+
+```{r}
+lm_fit <- lm(price ~ ., data = diamonds, subset = train)
+summary(lm_fit)
+
+lm_pred <- predict(lm_fit, diamonds[test,])
+
+lm_mse <- mean((diamonds$price[test] - lm_pred) ^ 2)
+lm_mse
+```
+
+# Wybór najlepszego podzbioru cech
+
+```{r}
+bs_fit <- regsubsets(price ~ ., data = diamonds[train,], nvmax = Inf)
+bs_fit_summary <- summary(bs_fit)
+bs_fit_summary
+```
+
+### Kryterium BIC
+
+```{r}
+plot(bs_fit, scale = 'bic')
+```
+
+### Przy pomocy metody zbioru walidacyjnego
+
+```{r}
+predict.regsubsets <- function(object, newdata, id, ...) {
+  model.formula <- as.formula(object$call[[2]])
+  mat <- model.matrix(model.formula, newdata)
+  coefs <- coef(object, id = id)
+  mat[, names(coefs)] %*% coefs
+}
+
+bs_mse <- sapply(1:9, function(i) {
+  pred <- predict(bs_fit, diamonds[test,], id = i)
+  mean((diamonds$price[test] - pred) ^ 2)
+})
+bs_mse
+
+plot(bs_mse, 
+     xlab = "Liczba zmiennych", ylab = "MSE",
+     col = "black", type = "b", pch = 20)
+points(which.min(bs_mse), min(bs_mse), col = "red", pch = 9)
+```
