@@ -31,7 +31,6 @@ Cechy:
 
 ```{r}
 diamonds <- read.csv("diamonds.csv", header = TRUE, stringsAsFactors = TRUE)
-diamondsG <- diamonds
 str(diamonds)
 knitr::kable(head(diamonds))
 ```
@@ -42,21 +41,80 @@ knitr::kable(head(diamonds))
 # Usunięcie liczb porządkowych
 diamonds$X <- NULL
 
-# Konwersja zmiennych typu factor na liczby
+# Posortowanie zmiennych typu factor
 diamonds$color <- factor(diamonds$color,
-                        levels = c("D", "E", "F", "G", "H", "I", "J"),
-                        ordered = TRUE)
-diamonds$color <- as.numeric(diamonds$color)
+                         levels = c("D", "E", "F", "G", "H", "I", "J"),
+                         ordered = TRUE)
 
 diamonds$clarity <- factor(diamonds$clarity,
-                          levels = c("I1", "SI2", "SI1", "VS2", "VS1", "VVS2", "VVS1", "IF"),
-                          ordered = TRUE)
-diamonds$clarity <- as.numeric(diamonds$clarity)
+                           levels = c("I1", "SI2", "SI1", "VS2", "VS1", "VVS2", "VVS1", "IF"),
+                           ordered = TRUE)
 
 diamonds$cut <- factor(diamonds$cut,
-                      levels = c("Fair", "Good", "Very Good", "Premium", "Ideal"),
-                      ordered = TRUE)
-diamonds$cut <- as.numeric(diamonds$cut)
+                       levels = c("Fair", "Good", "Very Good", "Premium", "Ideal"),
+                       ordered = TRUE)
+
+# Konwersja do zmiennych numerycznych
+diamonds_num <- transform(diamonds,
+                          color = as.numeric(color),
+                          clarity = as.numeric(clarity),
+                          cut = as.numeric(cut))
+```
+
+# Pomocnicze funkcje
+
+```{r}
+fancy_plot <- function (x, y, ...) {
+  if (is.numeric(x)) {
+    # Powiększenie danych na wykresie poprzez ukrycie daleko oddalonych skrajnych punktów
+    xlim = quantile(x, c(0.001, 0.999))
+    col = "#555555"
+  } else {
+    xlim = NULL
+    col = "#cccccc"
+  }
+
+  plot(x = x, y = y, xlim = xlim, pch = 20, cex = 0.05, col = col, ...)
+}
+```
+
+
+# Regresja jednokrotna
+
+```{r}
+
+single_linear_regression <- function (predictor, predictor_name) {
+  predictor_num <- as.numeric(predictor)
+  
+  lm_fit <- lm(diamonds$price ~ predictor_num)
+  #poly_fit <- lm(diamonds$price ~ poly(predictor_num, 3))
+  
+  fancy_plot(x = predictor,
+             y = diamonds$price,
+             main = sprintf("price / %s", predictor_name),
+             xlab = predictor_name,
+             ylab = "price ($)")
+  
+  abline(lm_fit, lwd = 2, col = "red")
+  
+  #grid <- seq(min(predictor_num), max(predictor_num), length.out = 100)
+
+  #lines(x = grid,
+  #      y = predict(poly_fit, list(predictor_num = grid), se.fit = TRUE)$fit,
+  #      lwd = 2, col = "red")
+}
+
+single_linear_regression(diamonds$carat, "carat")
+single_linear_regression(diamonds$cut, "cut")
+single_linear_regression(diamonds$color, "color")
+single_linear_regression(diamonds$clarity, "clarity")
+single_linear_regression(diamonds$depth, "depth")
+single_linear_regression(diamonds$depth + runif(nrow(diamonds), -0.05, 0.05), "depth (with random noise)")
+single_linear_regression(diamonds$table, "table")
+single_linear_regression(as.factor(round(diamonds$table)), "table (rounded to nearest integer)")
+single_linear_regression(diamonds$x, "x")
+single_linear_regression(diamonds$y, "y")
+single_linear_regression(diamonds$x, "z")
 ```
 
 # Podział na zbiór treningowy i testowy
@@ -67,22 +125,22 @@ train <- sample(1:n, n / 2)
 test <- -train
 ```
 
-# Regresja liniowa
+# Regresja liniowa wielokrotna
 
 ```{r}
-lm_fit <- lm(price ~ ., data = diamonds, subset = train)
+lm_fit <- lm(price ~ ., data = diamonds_num, subset = train)
 summary(lm_fit)
 
-lm_pred <- predict(lm_fit, diamonds[test,])
+lm_pred <- predict(lm_fit, diamonds_num[test,])
 
-lm_mse <- mean((diamonds$price[test] - lm_pred) ^ 2)
+lm_mse <- mean((diamonds_num$price[test] - lm_pred) ^ 2)
 lm_mse
 ```
 
 # Wybór najlepszego podzbioru cech
 
 ```{r}
-bs_fit <- regsubsets(price ~ ., data = diamonds, nvmax = Inf)
+bs_fit <- regsubsets(price ~ ., data = diamonds_num, nvmax = Inf)
 bs_fit_summary <- summary(bs_fit)
 bs_fit_summary
 ```
@@ -104,8 +162,8 @@ predict.regsubsets <- function(object, newdata, id, ...) {
 }
 
 bs_mse <- sapply(1:9, function(i) {
-  pred <- predict(bs_fit, diamonds[test,], id = i)
-  mean((diamonds$price[test] - pred) ^ 2)
+  pred <- predict(bs_fit, diamonds_num[test,], id = i)
+  mean((diamonds_num$price[test] - pred) ^ 2)
 })
 bs_mse
 
@@ -119,7 +177,7 @@ points(which.min(bs_mse), min(bs_mse), col = "red", pch = 9)
 ```{r}
 library(tree)
 Cost <- factor(ifelse(diamonds$price <= 1000, "Cheap", ifelse(diamonds$price <= 10000, "Moderate", "Expansive")))
-diamondsE <- data.frame(diamonds, Cost)
+diamondsE <- data.frame(diamonds_num, Cost)
 
 diamonds.tree <- tree(Cost ~ . - price, data = diamondsE, subset = train)
 plot(diamonds.tree)
@@ -145,7 +203,7 @@ se.bands <- cbind(pred.poly$fit + 2 * pred.poly$se.fit,
                   pred.poly$fit - 2 * pred.poly$se.fit)
 fit.smooth.cv <- smooth.spline(diamondsX$x, diamondsX$price)
 
-plot(diamondsX$x, diamondsX$price, col = "darkgrey", cex = 0.5, xlim = x.lims)
+fancy_plot(diamondsX$x, diamondsX$price, xlab = "x (mm)", ylab = "price ($)")
 lines(x.grid, pred.poly$fit, col = "red", lwd = 2)
 matlines(x.grid, se.bands, col = "red", lty = "dashed")
 lines(fit.smooth.cv, col = "blue", lwd = 2)
@@ -153,11 +211,8 @@ lines(fit.smooth.cv, col = "blue", lwd = 2)
 
 # Regresja logistyczna GAM
 ```{r}
-diamondsG$cut <- factor(diamondsG$cut, levels = c("Fair", "Good", "Very Good", "Premium", "Ideal"))
-diamondsG$clarity <- factor(diamondsG$clarity, levels = c("I1", "SI2", "SI1", "VS2", "VS1", "VVS2", "VVS1", "IF"))
-
 library(gam)
-fit.gam.bf <- gam(I(price > 10000) ~ s(table, df = 5) + cut + clarity + color, data = diamondsG, family = binomial)
+fit.gam.bf <- gam(I(price > 10000) ~ s(table, df = 5) + cut + clarity + color, data = diamonds, family = binomial)
 summary(fit.gam.bf)
 #par(mfrow = c(1,4))
 plot(fit.gam.bf, col = "red")
