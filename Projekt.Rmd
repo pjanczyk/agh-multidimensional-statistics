@@ -13,13 +13,30 @@ library(leaps)
 set.seed(1)
 ```
 
+
 # Zbiór danych
+Cechy:  
+price - price in US dollars (\$326–\$18,823)  
+carat - weight of the diamond (0.2–5.01)  
+cut - quality of the cut (Fair, Good, Very Good, Premium, Ideal)  
+color - diamond colour, from D (best) to J (worst)  
+clarity - a measurement of how clear the diamond is (I1 (worst), SI2, SI1, VS2, VS1, VVS2, VVS1, IF (best))  
+x - length in mm (0–10.74)  
+y - width in mm (0–58.9)  
+z - depth in mm (0–31.8)  
+depth - total depth percentage = z / mean(x, y) = 2 * z / (x + y) (43–79)  
+table - width of top of diamond relative to widest point (43–95)  
 
 ```{r}
 diamonds <- read.csv("diamonds.csv", header = TRUE, stringsAsFactors = TRUE)
+diamondsG <- diamonds
+str(diamonds)
+head(diamonds)
+```
 
-colnames(diamonds)
 
+# Przygotowanie zbioru danych
+```{r}
 # Usunięcie liczb porządkowych
 diamonds$X <- NULL
 
@@ -63,7 +80,7 @@ lm_mse
 # Wybór najlepszego podzbioru cech
 
 ```{r}
-bs_fit <- regsubsets(price ~ ., data = diamonds[train,], nvmax = Inf)
+bs_fit <- regsubsets(price ~ ., data = diamonds, nvmax = Inf)
 bs_fit_summary <- summary(bs_fit)
 bs_fit_summary
 ```
@@ -95,3 +112,52 @@ plot(bs_mse,
      col = "black", type = "b", pch = 20)
 points(which.min(bs_mse), min(bs_mse), col = "red", pch = 9)
 ```
+
+# Drzewo decyzyjne
+```{r}
+library(tree)
+Cost <- factor(ifelse(diamonds$price <= 1000, "Cheap", ifelse(diamonds$price <= 10000, "Moderate", "Expansive")))
+diamondsE <- data.frame(diamonds, Cost)
+
+diamonds.tree <- tree(Cost ~ . - price, data = diamondsE, subset = train)
+plot(diamonds.tree)
+text(diamonds.tree, pretty = 0)
+summary(diamonds.tree)
+
+tree.class <- predict(diamonds.tree, newdata = diamondsE[test,], type = "class")
+table(tree.class, diamondsE$Cost[test])
+mean(tree.class != diamondsE$Cost[test])
+
+```
+
+# Regresja wielomianowa i naturalnymi funkcjami sklejanymi
+```{r}
+diamondsX <- diamonds[diamonds$x > 0, ]
+fit.poly <- lm(price ~ poly(x, 3), data = diamondsX)
+summary(fit.poly)
+
+x.lims <- range(diamondsX$x)
+x.grid <- seq(x.lims[1], x.lims[2])
+pred.poly <- predict(fit.poly, list(x = x.grid), se.fit = TRUE)
+se.bands <- cbind(pred.poly$fit + 2 * pred.poly$se.fit, 
+                  pred.poly$fit - 2 * pred.poly$se.fit)
+fit.smooth.cv <- smooth.spline(diamondsX$x, diamondsX$price)
+
+plot(diamondsX$x, diamondsX$price, col = "darkgrey", cex = 0.5, xlim = x.lims)
+lines(x.grid, pred.poly$fit, col = "red", lwd = 2)
+matlines(x.grid, se.bands, col = "red", lty = "dashed")
+lines(fit.smooth.cv, col = "blue", lwd = 2)
+```
+
+# Regresja logistyczna GAM
+```{r}
+diamondsG$cut <- factor(diamondsG$cut, levels = c("Fair", "Good", "Very Good", "Premium", "Ideal"))
+diamondsG$clarity <- factor(diamondsG$clarity, levels = c("I1", "SI2", "SI1", "VS2", "VS1", "VVS2", "VVS1", "IF"))
+
+library(gam)
+fit.gam.bf <- gam(I(price > 10000) ~ s(table, df = 5) + cut + clarity + color, data = diamondsG, family = binomial)
+summary(fit.gam.bf)
+#par(mfrow = c(1,4))
+plot(fit.gam.bf, col = "red")
+```
+
