@@ -32,7 +32,7 @@ Cechy:
 diamonds <- read.csv("diamonds.csv", header = TRUE, stringsAsFactors = TRUE)
 diamondsG <- diamonds
 str(diamonds)
-head(diamonds)
+knitr::kable(head(diamonds))
 ```
 
 
