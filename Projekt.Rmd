@@ -17,6 +17,7 @@ set.seed(1)
 # Zbiór danych
 
 Cechy:  
+
 * `price` — price in US dollars (\$326–\$18,823)
 * `carat` — weight of the diamond (0.2–5.01)
 * `cut` — quality of the cut (_Fair_, _Good_, _Very Good_, _Premium_, _Ideal_)
