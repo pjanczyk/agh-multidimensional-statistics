@@ -41,6 +41,9 @@ knitr::kable(head(diamonds))
 # Usunięcie liczb porządkowych
 diamonds$X <- NULL
 
+# Odfitrowanie kilkunastu rekordów z brakującymi danymi
+diamonds <- diamonds[diamonds$x > 0 & diamonds$y > 0 & diamonds$z > 0,]
+
 # Posortowanie zmiennych typu factor
 diamonds$color <- factor(diamonds$color,
                          levels = c("D", "E", "F", "G", "H", "I", "J"),
@@ -61,6 +64,14 @@ diamonds_num <- transform(diamonds,
                           cut = as.numeric(cut))
 ```
 
+# Podział na zbiór treningowy i testowy
+
+```{r}
+n <- nrow(diamonds)
+train <- sample(1:n, n / 2)
+test <- -train
+```
+
 # Pomocnicze funkcje
 
 ```{r}
@@ -68,7 +79,7 @@ fancy_plot <- function (x, y, ...) {
   if (is.numeric(x)) {
     # Powiększenie danych na wykresie poprzez ukrycie daleko oddalonych skrajnych punktów
     xlim = quantile(x, c(0.001, 0.999))
-    col = "#555555"
+    col = "#666666"
   } else {
     xlim = NULL
     col = "#cccccc"
@@ -81,48 +92,64 @@ fancy_plot <- function (x, y, ...) {
 
 # Regresja jednokrotna
 
-```{r}
+Regresja liniowa, regresja wielomianowa, wygładzające funkcje sklejane
 
-single_linear_regression <- function (predictor, predictor_name) {
-  predictor_num <- as.numeric(predictor)
-  
-  lm_fit <- lm(diamonds$price ~ predictor_num)
-  #poly_fit <- lm(diamonds$price ~ poly(predictor_num, 3))
-  
-  fancy_plot(x = predictor,
-             y = diamonds$price,
+```{r, warning=FALSE}
+single_regression <- function (predictor, predictor_name, show_summary = FALSE) {
+  fancy_plot(x = predictor, y = diamonds$price,
              main = sprintf("price / %s", predictor_name),
              xlab = predictor_name,
              ylab = "price ($)")
   
-  abline(lm_fit, lwd = 2, col = "red")
+  predictor_num <- as.numeric(predictor)
   
-  #grid <- seq(min(predictor_num), max(predictor_num), length.out = 100)
-
-  #lines(x = grid,
-  #      y = predict(poly_fit, list(predictor_num = grid), se.fit = TRUE)$fit,
-  #      lwd = 2, col = "red")
+  # Regresja liniowa
+  linear_fit <- lm(diamonds$price ~ predictor_num, subset = train)
+  abline(linear_fit, lwd = 2, col = "darkgreen", lty = 2)
+  
+  # Regresja wielomianowa
+  poly_fit <- lm(diamonds$price ~ poly(predictor_num, 3), subset = train)
+  grid <- seq(min(predictor_num), max(predictor_num), length.out = 100)
+  lines(x = grid, y = predict(poly_fit, list(predictor_num = grid), se.fit = TRUE)$fit,
+        lwd = 2, col = "blue")
+  
+  # Wygładzające funkcje sklejane
+  spline_fit <- smooth.spline(predictor_num[train], diamonds$price[train], cv = TRUE)
+  lines(spline_fit, col = "red", lwd = 2)
+  
+  legend("topleft",
+         legend=c("lin.", "wiel.", "w.f.s."),
+         col=c("darkgreen", "blue", "red"),
+         lty=c(2, 1, 1),
+         lwd = 2)
+  
+  linear_pred = predict(linear_fit, list(predictor_num = predictor_num[test]))
+  poly_pred = predict(poly_fit, list(predictor_num = predictor_num[test]))
+  linear_mse = mean((diamonds$price[test] - linear_pred) ^ 2)
+  poly_mse = mean((diamonds$price[test] - poly_pred) ^ 2)
+  
+  print(knitr::kable(cbind(
+    linear_mse = linear_mse,
+    poly_mse = poly_mse)))
+  
+  if (show_summary) {
+    print(summary(linear_fit))
+    print(summary(poly_fit))
+    print(summary(spline_fit))
+  }
 }
 
-single_linear_regression(diamonds$carat, "carat")
-single_linear_regression(diamonds$cut, "cut")
-single_linear_regression(diamonds$color, "color")
-single_linear_regression(diamonds$clarity, "clarity")
-single_linear_regression(diamonds$depth, "depth")
-single_linear_regression(diamonds$depth + runif(nrow(diamonds), -0.05, 0.05), "depth (with random noise)")
-single_linear_regression(diamonds$table, "table")
-single_linear_regression(as.factor(round(diamonds$table)), "table (rounded to nearest integer)")
-single_linear_regression(diamonds$x, "x")
-single_linear_regression(diamonds$y, "y")
-single_linear_regression(diamonds$x, "z")
-```
-
-# Podział na zbiór treningowy i testowy
-
-```{r}
-n <- nrow(diamonds)
-train <- sample(1:n, n / 2)
-test <- -train
+single_regression(diamonds$carat, "carat")
+single_regression(diamonds$cut, "cut")
+single_regression(diamonds$color, "color")
+single_regression(diamonds$clarity, "clarity")
+single_regression(diamonds$depth, "depth")
+single_regression(diamonds$depth + runif(nrow(diamonds), -0.05, 0.05), "depth (with random noise)")
+single_regression(diamonds$table, "table")
+single_regression(as.factor(round(diamonds$table)), "table (rounded to nearest integer)")
+single_regression(diamonds$x, "x", show_summary = TRUE)
+single_regression(diamonds$y, "y")
+single_regression(diamonds$z, "z")
 ```
 
 # Regresja liniowa wielokrotna
@@ -190,27 +217,8 @@ mean(tree.class != diamondsE$Cost[test])
 
 ```
 
-# Regresja wielomianowa i naturalnymi funkcjami sklejanymi
-```{r}
-diamondsX <- diamonds[diamonds$x > 0, ]
-fit.poly <- lm(price ~ poly(x, 3), data = diamondsX)
-summary(fit.poly)
-
-x.lims <- range(diamondsX$x)
-x.grid <- seq(x.lims[1], x.lims[2])
-pred.poly <- predict(fit.poly, list(x = x.grid), se.fit = TRUE)
-se.bands <- cbind(pred.poly$fit + 2 * pred.poly$se.fit, 
-                  pred.poly$fit - 2 * pred.poly$se.fit)
-fit.smooth.cv <- smooth.spline(diamondsX$x, diamondsX$price)
-
-fancy_plot(diamondsX$x, diamondsX$price, xlab = "x (mm)", ylab = "price ($)")
-lines(x.grid, pred.poly$fit, col = "red", lwd = 2)
-matlines(x.grid, se.bands, col = "red", lty = "dashed")
-lines(fit.smooth.cv, col = "blue", lwd = 2)
-```
-
 # Regresja logistyczna GAM
-```{r}
+```{r, warning=FALSE}
 library(gam)
 fit.gam.bf <- gam(I(price > 10000) ~ s(table, df = 5) + cut + clarity + color, data = diamonds, family = binomial)
 summary(fit.gam.bf)
