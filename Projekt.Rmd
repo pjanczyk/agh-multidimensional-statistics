@@ -1,14 +1,14 @@
 ---
-title: "Projekt na przedmiot Statystyka Wielowymiarowa na AGH"
+title: "AGH | Statystyka Wielowymiarowa | Projekt"
 author: "Piotr Janczyk, Miłosz Janowski"
 output: html_document
 ---
 
-# Projekt na przedmiot Statystyka Wielowymiarowa na AGH
+# AGH | Statystyka Wielowymiarowa | Projekt
 
 [Piotr Janczyk](https://github.com/pjanczyk), [Miłosz Janowski](https://github.com/milekj)
 
-Analiza zbioru danych _diamonds_.
+Analiza zbioru danych [diamonds](https://github.com/vincentarelbundock/Rdatasets/blob/master/csv/ggplot2/diamonds.csv)
 
 ---
 
@@ -18,9 +18,6 @@ set.seed(1)
 ```
 
 ## Zbiór danych
-
-[https://github.com/vincentarelbundock/Rdatasets/blob/master/csv/ggplot2/diamonds.csv](https://github.com/vincentarelbundock/Rdatasets/blob/master/csv/ggplot2/diamonds.csv)
-
 
 Cechy:  
 
@@ -79,7 +76,7 @@ train <- sample(1:n, n / 2)
 test <- -train
 ```
 
-# Pomocnicze funkcje
+## Pomocnicze funkcje
 
 ```{r}
 fancy_plot <- function (x, y, ...) {
@@ -102,11 +99,11 @@ fancy_plot <- function (x, y, ...) {
 Regresja liniowa, regresja wielomianowa, wygładzające funkcje sklejane
 
 ```{r, warning=FALSE}
-single_regression <- function (predictor, predictor_name, show_summary = FALSE) {
+single_regression <- function (predictor, title, xlab, show_summary = TRUE) {
   fancy_plot(x = predictor, y = diamonds$price,
-             main = sprintf("price / %s", predictor_name),
-             xlab = predictor_name,
-             ylab = "price ($)")
+             main = title,
+             xlab = xlab,
+             ylab = "price [$]")
   
   predictor_num <- as.numeric(predictor)
   
@@ -135,28 +132,32 @@ single_regression <- function (predictor, predictor_name, show_summary = FALSE) 
   linear_mse = mean((diamonds$price[test] - linear_pred) ^ 2)
   poly_mse = mean((diamonds$price[test] - poly_pred) ^ 2)
   
-  print(knitr::kable(cbind(
-    linear_mse = linear_mse,
-    poly_mse = poly_mse)))
-  
   if (show_summary) {
+    print(knitr::kable(cbind(
+      linear_mse = linear_mse,
+      poly_mse = poly_mse)))
+
     print(summary(linear_fit))
     print(summary(poly_fit))
-    print(summary(spline_fit))
   }
 }
 
-single_regression(diamonds$carat, "carat")
-single_regression(diamonds$cut, "cut")
-single_regression(diamonds$color, "color")
-single_regression(diamonds$clarity, "clarity")
-single_regression(diamonds$depth, "depth")
-single_regression(diamonds$depth + runif(nrow(diamonds), -0.05, 0.05), "depth (with random noise)")
-single_regression(diamonds$table, "table")
-single_regression(as.factor(round(diamonds$table)), "table (rounded to nearest integer)")
-single_regression(diamonds$x, "x", show_summary = TRUE)
-single_regression(diamonds$y, "y")
-single_regression(diamonds$z, "z")
+single_regression(diamonds$carat, "price / carat", "carat [ct]")
+single_regression(diamonds$cut, "price / cut", "cut")
+single_regression(diamonds$color, "price / color", "color")
+single_regression(diamonds$clarity, "price / clarity", "clarity")
+single_regression(diamonds$depth, "price / depth", "depth [%]")
+single_regression(diamonds$depth + runif(nrow(diamonds), -0.05, 0.05),
+                  "price / depth", "depth [%] (z dodatkiem losowego szumu)",
+                  show_summary = FALSE)
+single_regression(diamonds$table, "price / table", "table")
+single_regression(as.factor(round(diamonds$table)),
+                  "price / table",
+                  "table (zakrąglone do najbliższej liczby całkowitej)",
+                  show_summary = FALSE)
+single_regression(diamonds$x, "price / x", "x [mm]")
+single_regression(diamonds$y, "price / y", "y [mm]")
+single_regression(diamonds$z, "price / z", "z [mm]")
 ```
 
 ## Regresja liniowa wielokrotna
@@ -175,7 +176,7 @@ lm_mse
 
 ```{r}
 library(leaps)
-bs_fit <- regsubsets(price ~ ., data = diamonds_num, nvmax = Inf)
+bs_fit <- regsubsets(price ~ ., data = diamonds_num, nvmax = Inf, subset = train)
 bs_fit_summary <- summary(bs_fit)
 bs_fit_summary
 ```
@@ -222,7 +223,6 @@ summary(diamonds.tree)
 tree.class <- predict(diamonds.tree, newdata = diamondsE[test,], type = "class")
 table(tree.class, diamondsE$Cost[test])
 mean(tree.class != diamondsE$Cost[test])
-
 ```
 
 ## Regresja logistyczna GAM
@@ -230,7 +230,6 @@ mean(tree.class != diamondsE$Cost[test])
 library(gam)
 fit.gam.bf <- gam(I(price > 10000) ~ s(table, df = 5) + cut + clarity + color, data = diamonds, family = binomial)
 summary(fit.gam.bf)
-#par(mfrow = c(1,4))
 plot(fit.gam.bf, col = "red")
 ```
 
