@@ -4,7 +4,11 @@ author: "Piotr Janczyk, Miłosz Janowski"
 output: html_document
 ---
 
-Analiza zbioru danych _diamonds_
+# Projekt na przedmiot Statystyka Wielowymiarowa na AGH
+
+[Piotr Janczyk](https://github.com/pjanczyk), [Miłosz Janowski](https://github.com/milekj)
+
+Analiza zbioru danych _diamonds_.
 
 ---
 

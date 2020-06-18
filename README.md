@@ -1,5 +1,10 @@
+# Projekt na przedmiot Statystyka Wielowymiarowa na AGH
+
+[Piotr Janczyk](https://github.com/pjanczyk), [Miłosz
+Janowski](https://github.com/milekj)
+
 Analiza zbioru danych
-*diamonds*
+*diamonds*.
 
 -----
 
