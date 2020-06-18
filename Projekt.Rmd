@@ -1,5 +1,5 @@
 ---
-title: "Statystyka Wielowymiarowa — Projekt"
+title: "Projekt na przedmiot Statystyka Wielowymiarowa na AGH"
 author: "Piotr Janczyk, Miłosz Janowski"
 output: html_document
 ---
