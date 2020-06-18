@@ -1,16 +1,14 @@
-# Projekt na przedmiot Statystyka Wielowymiarowa na AGH
+# AGH | Statystyka Wielowymiarowa | Projekt
 
 [Piotr Janczyk](https://github.com/pjanczyk), [Miłosz
 Janowski](https://github.com/milekj)
 
 Analiza zbioru danych
-*diamonds*.
+[diamonds](https://github.com/vincentarelbundock/Rdatasets/blob/master/csv/ggplot2/diamonds.csv)
 
 -----
 
 ## Zbiór danych
-
-<https://github.com/vincentarelbundock/Rdatasets/blob/master/csv/ggplot2/diamonds.csv>
 
 Cechy:
 
@@ -99,7 +97,7 @@ train <- sample(1:n, n / 2)
 test <- -train
 ```
 
-# Pomocnicze funkcje
+## Pomocnicze funkcje
 
 ``` r
 fancy_plot <- function (x, y, ...) {
@@ -122,11 +120,11 @@ Regresja liniowa, regresja wielomianowa, wygładzające funkcje
 sklejane
 
 ``` r
-single_regression <- function (predictor, predictor_name, show_summary = FALSE) {
+single_regression <- function (predictor, title, xlab, show_summary = TRUE) {
   fancy_plot(x = predictor, y = diamonds$price,
-             main = sprintf("price / %s", predictor_name),
-             xlab = predictor_name,
-             ylab = "price ($)")
+             main = title,
+             xlab = xlab,
+             ylab = "price [$]")
   
   predictor_num <- as.numeric(predictor)
   
@@ -155,18 +153,17 @@ single_regression <- function (predictor, predictor_name, show_summary = FALSE) 
   linear_mse = mean((diamonds$price[test] - linear_pred) ^ 2)
   poly_mse = mean((diamonds$price[test] - poly_pred) ^ 2)
   
-  print(knitr::kable(cbind(
-    linear_mse = linear_mse,
-    poly_mse = poly_mse)))
-  
   if (show_summary) {
+    print(knitr::kable(cbind(
+      linear_mse = linear_mse,
+      poly_mse = poly_mse)))
+
     print(summary(linear_fit))
     print(summary(poly_fit))
-    print(summary(spline_fit))
   }
 }
 
-single_regression(diamonds$carat, "carat")
+single_regression(diamonds$carat, "price / carat", "carat [ct]")
 ```
 
 <img src="readme_files/figure-gfm/unnamed-chunk-5-1.png" width="672" />
@@ -177,10 +174,49 @@ single_regression(diamonds$carat, "carat")
  linear_mse   poly_mse
 -----------  ---------
     2406656    2155097
+
+Call:
+lm(formula = diamonds$price ~ predictor_num, subset = train)
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-18577.7   -810.0    -18.8    544.8  11875.9 
+
+Coefficients:
+              Estimate Std. Error t value Pr(>|t|)    
+(Intercept)   -2266.91      18.49  -122.6   <2e-16 ***
+predictor_num  7757.02      19.98   388.2   <2e-16 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 1544 on 26958 degrees of freedom
+Multiple R-squared:  0.8483,    Adjusted R-squared:  0.8483 
+F-statistic: 1.507e+05 on 1 and 26958 DF,  p-value: < 2.2e-16
+
+
+Call:
+lm(formula = diamonds$price ~ poly(predictor_num, 3), subset = train)
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-11727.7   -530.6    -30.5    269.8  27145.1 
+
+Coefficients:
+                          Estimate Std. Error t value Pr(>|t|)    
+(Intercept)                3925.07       8.91  440.53   <2e-16 ***
+poly(predictor_num, 3)1  854144.43    2082.72  410.11   <2e-16 ***
+poly(predictor_num, 3)2   43429.70    2076.55   20.91   <2e-16 ***
+poly(predictor_num, 3)3 -101646.69    1953.40  -52.04   <2e-16 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 1463 on 26956 degrees of freedom
+Multiple R-squared:  0.8638,    Adjusted R-squared:  0.8638 
+F-statistic: 5.7e+04 on 3 and 26956 DF,  p-value: < 2.2e-16
 ```
 
 ``` r
-single_regression(diamonds$cut, "cut")
+single_regression(diamonds$cut, "price / cut", "cut")
 ```
 
 <img src="readme_files/figure-gfm/unnamed-chunk-5-2.png" width="672" />
@@ -191,10 +227,49 @@ single_regression(diamonds$cut, "cut")
  linear_mse   poly_mse
 -----------  ---------
    16036992   15897016
+
+Call:
+lm(formula = diamonds$price ~ predictor_num, subset = train)
+
+Residuals:
+   Min     1Q Median     3Q    Max 
+ -4097  -2870  -1518   1379  15078 
+
+Coefficients:
+              Estimate Std. Error t value Pr(>|t|)    
+(Intercept)    4644.63      87.35  53.175   <2e-16 ***
+predictor_num  -187.06      21.52  -8.692   <2e-16 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 3959 on 26958 degrees of freedom
+Multiple R-squared:  0.002794,  Adjusted R-squared:  0.002757 
+F-statistic: 75.54 on 1 and 26958 DF,  p-value: < 2.2e-16
+
+
+Call:
+lm(formula = diamonds$price ~ poly(predictor_num, 3), subset = train)
+
+Residuals:
+   Min     1Q Median     3Q    Max 
+ -4142  -2721  -1474   1345  15339 
+
+Coefficients:
+                         Estimate Std. Error t value Pr(>|t|)    
+(Intercept)               3913.61      23.99 163.104   <2e-16 ***
+poly(predictor_num, 3)1 -48456.06    5554.32  -8.724   <2e-16 ***
+poly(predictor_num, 3)2 -58174.39    5522.18 -10.535   <2e-16 ***
+poly(predictor_num, 3)3 -68705.67    5540.75 -12.400   <2e-16 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 3940 on 26956 degrees of freedom
+Multiple R-squared:  0.01235,   Adjusted R-squared:  0.01224 
+F-statistic: 112.4 on 3 and 26956 DF,  p-value: < 2.2e-16
 ```
 
 ``` r
-single_regression(diamonds$color, "color")
+single_regression(diamonds$color, "price / color", "color")
 ```
 
 <img src="readme_files/figure-gfm/unnamed-chunk-5-3.png" width="672" />
@@ -205,10 +280,49 @@ single_regression(diamonds$color, "color")
  linear_mse   poly_mse
 -----------  ---------
    15592394   15575742
+
+Call:
+lm(formula = diamonds$price ~ predictor_num, subset = train)
+
+Residuals:
+   Min     1Q Median     3Q    Max 
+ -4921  -2645  -1346   1372  15806 
+
+Coefficients:
+              Estimate Std. Error t value Pr(>|t|)    
+(Intercept)    2491.15      55.66   44.76   <2e-16 ***
+predictor_num   395.72      13.98   28.30   <2e-16 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 3906 on 26958 degrees of freedom
+Multiple R-squared:  0.02885,   Adjusted R-squared:  0.02881 
+F-statistic: 800.8 on 1 and 26958 DF,  p-value: < 2.2e-16
+
+
+Call:
+lm(formula = diamonds$price ~ poly(predictor_num, 3), subset = train)
+
+Residuals:
+   Min     1Q Median     3Q    Max 
+ -4976  -2601  -1366   1350  15614 
+
+Coefficients:
+                         Estimate Std. Error t value Pr(>|t|)    
+(Intercept)               3913.53      23.79 164.534  < 2e-16 ***
+poly(predictor_num, 3)1 156254.33    5522.85  28.292  < 2e-16 ***
+poly(predictor_num, 3)2  17500.67    5518.69   3.171  0.00152 ** 
+poly(predictor_num, 3)3 -14074.92    5522.12  -2.549  0.01081 *  
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 3905 on 26956 degrees of freedom
+Multiple R-squared:  0.02944,   Adjusted R-squared:  0.02933 
+F-statistic: 272.6 on 3 and 26956 DF,  p-value: < 2.2e-16
 ```
 
 ``` r
-single_regression(diamonds$clarity, "clarity")
+single_regression(diamonds$clarity, "price / clarity", "clarity")
 ```
 
 <img src="readme_files/figure-gfm/unnamed-chunk-5-4.png" width="672" />
@@ -219,10 +333,49 @@ single_regression(diamonds$clarity, "clarity")
  linear_mse   poly_mse
 -----------  ---------
    15737796   15736939
+
+Call:
+lm(formula = diamonds$price ~ predictor_num, subset = train)
+
+Residuals:
+   Min     1Q Median     3Q    Max 
+ -4630  -2636  -1453   1135  16074 
+
+Coefficients:
+              Estimate Std. Error t value Pr(>|t|)    
+(Intercept)    5343.81      63.30   84.42   <2e-16 ***
+predictor_num  -352.95      14.48  -24.38   <2e-16 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 3921 on 26958 degrees of freedom
+Multiple R-squared:  0.02156,   Adjusted R-squared:  0.02153 
+F-statistic: 594.1 on 1 and 26958 DF,  p-value: < 2.2e-16
+
+
+Call:
+lm(formula = diamonds$price ~ poly(predictor_num, 3), subset = train)
+
+Residuals:
+   Min     1Q Median     3Q    Max 
+ -4704  -2640  -1453   1136  16078 
+
+Coefficients:
+                          Estimate Std. Error t value Pr(>|t|)    
+(Intercept)                3913.79      23.88 163.882   <2e-16 ***
+poly(predictor_num, 3)1 -134972.19    5538.00 -24.372   <2e-16 ***
+poly(predictor_num, 3)2    2062.35    5542.18   0.372    0.710    
+poly(predictor_num, 3)3   -2569.83    5544.50  -0.463    0.643    
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 3921 on 26956 degrees of freedom
+Multiple R-squared:  0.02158,   Adjusted R-squared:  0.02147 
+F-statistic: 198.1 on 3 and 26956 DF,  p-value: < 2.2e-16
 ```
 
 ``` r
-single_regression(diamonds$depth, "depth")
+single_regression(diamonds$depth, "price / depth", "depth [%]")
 ```
 
 <img src="readme_files/figure-gfm/unnamed-chunk-5-5.png" width="672" />
@@ -233,24 +386,57 @@ single_regression(diamonds$depth, "depth")
  linear_mse   poly_mse
 -----------  ---------
    16084083   16070745
+
+Call:
+lm(formula = diamonds$price ~ predictor_num, subset = train)
+
+Residuals:
+   Min     1Q Median     3Q    Max 
+ -3818  -2960  -1512   1374  14930 
+
+Coefficients:
+              Estimate Std. Error t value Pr(>|t|)    
+(Intercept)    6397.52    1034.05   6.187 6.23e-10 ***
+predictor_num   -40.19      16.74  -2.401   0.0163 *  
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 3964 on 26958 degrees of freedom
+Multiple R-squared:  0.0002139, Adjusted R-squared:  0.0001768 
+F-statistic: 5.767 on 1 and 26958 DF,  p-value: 0.01634
+
+
+Call:
+lm(formula = diamonds$price ~ poly(predictor_num, 3), subset = train)
+
+Residuals:
+   Min     1Q Median     3Q    Max 
+ -8533  -2946  -1523   1379  14952 
+
+Coefficients:
+                         Estimate Std. Error t value Pr(>|t|)    
+(Intercept)               3915.14      24.14 162.218  < 2e-16 ***
+poly(predictor_num, 3)1 -13285.88    5566.29  -2.387    0.017 *  
+poly(predictor_num, 3)2  22603.06    5541.53   4.079 4.54e-05 ***
+poly(predictor_num, 3)3   6510.01    5434.38   1.198    0.231    
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 3963 on 26956 degrees of freedom
+Multiple R-squared:  0.0008362, Adjusted R-squared:  0.000725 
+F-statistic:  7.52 on 3 and 26956 DF,  p-value: 5.011e-05
 ```
 
 ``` r
-single_regression(diamonds$depth + runif(nrow(diamonds), -0.05, 0.05), "depth (with random noise)")
+single_regression(diamonds$depth + runif(nrow(diamonds), -0.05, 0.05),
+                  "price / depth", "depth [%] (z dodatkiem losowego szumu)",
+                  show_summary = FALSE)
 ```
 
 <img src="readme_files/figure-gfm/unnamed-chunk-5-6.png" width="672" />
 
-``` 
-
-
- linear_mse   poly_mse
------------  ---------
-   16084087   16070730
-```
-
 ``` r
-single_regression(diamonds$table, "table")
+single_regression(diamonds$table, "price / table", "table")
 ```
 
 <img src="readme_files/figure-gfm/unnamed-chunk-5-7.png" width="672" />
@@ -261,24 +447,58 @@ single_regression(diamonds$table, "table")
  linear_mse   poly_mse
 -----------  ---------
    15824582   15768756
+
+Call:
+lm(formula = diamonds$price ~ predictor_num, subset = train)
+
+Residuals:
+   Min     1Q Median     3Q    Max 
+ -6507  -2730  -1475   1340  15765 
+
+Coefficients:
+              Estimate Std. Error t value Pr(>|t|)    
+(Intercept)   -9136.13     618.82  -14.76   <2e-16 ***
+predictor_num   227.14      10.76   21.11   <2e-16 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 3932 on 26958 degrees of freedom
+Multiple R-squared:  0.01626,   Adjusted R-squared:  0.01622 
+F-statistic: 445.5 on 1 and 26958 DF,  p-value: < 2.2e-16
+
+
+Call:
+lm(formula = diamonds$price ~ poly(predictor_num, 3), subset = train)
+
+Residuals:
+   Min     1Q Median     3Q    Max 
+ -4346  -2726  -1435   1326  16783 
+
+Coefficients:
+                         Estimate Std. Error t value Pr(>|t|)    
+(Intercept)               3913.11      23.92 163.620  < 2e-16 ***
+poly(predictor_num, 3)1 117886.40    5581.98  21.119  < 2e-16 ***
+poly(predictor_num, 3)2 -40388.94    5210.81  -7.751 9.44e-15 ***
+poly(predictor_num, 3)3  27818.55    4784.64   5.814 6.16e-09 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 3927 on 26956 degrees of freedom
+Multiple R-squared:  0.01885,   Adjusted R-squared:  0.01874 
+F-statistic: 172.6 on 3 and 26956 DF,  p-value: < 2.2e-16
 ```
 
 ``` r
-single_regression(as.factor(round(diamonds$table)), "table (rounded to nearest integer)")
+single_regression(as.factor(round(diamonds$table)),
+                  "price / table",
+                  "table (zakrąglone do najbliższej liczby całkowitej)",
+                  show_summary = FALSE)
 ```
 
 <img src="readme_files/figure-gfm/unnamed-chunk-5-8.png" width="672" />
 
-``` 
-
-
- linear_mse   poly_mse
------------  ---------
-   15823397   15755301
-```
-
 ``` r
-single_regression(diamonds$x, "x", show_summary = TRUE)
+single_regression(diamonds$x, "price / x", "x [mm]")
 ```
 
 <img src="readme_files/figure-gfm/unnamed-chunk-5-9.png" width="672" />
@@ -328,31 +548,10 @@ Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 Residual standard error: 1464 on 26956 degrees of freedom
 Multiple R-squared:  0.8636,    Adjusted R-squared:  0.8636 
 F-statistic: 5.689e+04 on 3 and 26956 DF,  p-value: < 2.2e-16
-
-           Length Class             Mode   
-x          524    -none-            numeric
-y          524    -none-            numeric
-w          524    -none-            numeric
-yin        524    -none-            numeric
-tol          1    -none-            numeric
-data         3    -none-            list   
-no.weights   1    -none-            logical
-lev        524    -none-            numeric
-cv.crit      1    -none-            numeric
-pen.crit     1    -none-            numeric
-crit         1    -none-            numeric
-df           1    -none-            numeric
-spar         1    -none-            numeric
-ratio        1    -none-            numeric
-lambda       1    -none-            numeric
-iparms       5    -none-            numeric
-auxM         0    -none-            NULL   
-fit          5    smooth.spline.fit list   
-call         4    -none-            call   
 ```
 
 ``` r
-single_regression(diamonds$y, "y")
+single_regression(diamonds$y, "price / y", "y [mm]")
 ```
 
 <img src="readme_files/figure-gfm/unnamed-chunk-5-10.png" width="672" />
@@ -363,10 +562,49 @@ single_regression(diamonds$y, "y")
  linear_mse    poly_mse
 -----------  ----------
     4278723   375194117
+
+Call:
+lm(formula = diamonds$price ~ predictor_num, subset = train)
+
+Residuals:
+   Min     1Q Median     3Q    Max 
+-83142  -1251   -217    937  11474 
+
+Coefficients:
+               Estimate Std. Error t value Pr(>|t|)    
+(Intercept)   -13971.08      60.37  -231.4   <2e-16 ***
+predictor_num   3119.13      10.33   301.8   <2e-16 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 1894 on 26958 degrees of freedom
+Multiple R-squared:  0.7717,    Adjusted R-squared:  0.7717 
+F-statistic: 9.111e+04 on 1 and 26958 DF,  p-value: < 2.2e-16
+
+
+Call:
+lm(formula = diamonds$price ~ poly(predictor_num, 3), subset = train)
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-15364.3   -494.0    -43.6    270.6  12270.6 
+
+Coefficients:
+                          Estimate Std. Error t value Pr(>|t|)    
+(Intercept)              3.869e+03  8.792e+00  440.04   <2e-16 ***
+poly(predictor_num, 3)1  1.665e+05  5.177e+03   32.16   <2e-16 ***
+poly(predictor_num, 3)2 -3.144e+06  2.273e+04 -138.35   <2e-16 ***
+poly(predictor_num, 3)3 -9.140e+05  6.586e+03 -138.78   <2e-16 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 1442 on 26956 degrees of freedom
+Multiple R-squared:  0.8676,    Adjusted R-squared:  0.8676 
+F-statistic: 5.889e+04 on 3 and 26956 DF,  p-value: < 2.2e-16
 ```
 
 ``` r
-single_regression(diamonds$z, "z")
+single_regression(diamonds$z, "price / z", "z [mm]")
 ```
 
 <img src="readme_files/figure-gfm/unnamed-chunk-5-11.png" width="672" />
@@ -377,6 +615,45 @@ single_regression(diamonds$z, "z")
  linear_mse     poly_mse
 -----------  -----------
     4316951   7972772041
+
+Call:
+lm(formula = diamonds$price ~ predictor_num, subset = train)
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-9854.2 -1270.9  -202.0   962.1 16645.2 
+
+Coefficients:
+               Estimate Std. Error t value Pr(>|t|)    
+(Intercept)   -14046.65      60.03  -234.0   <2e-16 ***
+predictor_num   5073.40      16.64   304.8   <2e-16 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 1880 on 26958 degrees of freedom
+Multiple R-squared:  0.7751,    Adjusted R-squared:  0.7751 
+F-statistic: 9.292e+04 on 1 and 26958 DF,  p-value: < 2.2e-16
+
+
+Call:
+lm(formula = diamonds$price ~ poly(predictor_num, 3), subset = train)
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-12654.1   -539.7    -21.8    374.6  12737.5 
+
+Coefficients:
+                          Estimate Std. Error t value Pr(>|t|)    
+(Intercept)              3.651e+03  1.248e+01  292.49   <2e-16 ***
+poly(predictor_num, 3)1 -1.737e+06  7.801e+04  -22.26   <2e-16 ***
+poly(predictor_num, 3)2 -1.437e+07  4.378e+05  -32.83   <2e-16 ***
+poly(predictor_num, 3)3 -2.473e+06  6.770e+04  -36.53   <2e-16 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 1524 on 26956 degrees of freedom
+Multiple R-squared:  0.8522,    Adjusted R-squared:  0.8522 
+F-statistic: 5.18e+04 on 3 and 26956 DF,  p-value: < 2.2e-16
 ```
 
 ## Regresja liniowa wielokrotna
@@ -428,13 +705,14 @@ lm_mse
 
 ``` r
 library(leaps)
-bs_fit <- regsubsets(price ~ ., data = diamonds_num, nvmax = Inf)
+bs_fit <- regsubsets(price ~ ., data = diamonds_num, nvmax = Inf, subset = train)
 bs_fit_summary <- summary(bs_fit)
 bs_fit_summary
 ```
 
     Subset selection object
-    Call: regsubsets.formula(price ~ ., data = diamonds_num, nvmax = Inf)
+    Call: regsubsets.formula(price ~ ., data = diamonds_num, nvmax = Inf, 
+        subset = train)
     9 Variables  (and intercept)
             Forced in Forced out
     carat       FALSE      FALSE
@@ -452,11 +730,11 @@ bs_fit_summary
     1  ( 1 ) "*"   " " " "   " "     " "   " "   " " " " " "
     2  ( 1 ) "*"   " " " "   "*"     " "   " "   " " " " " "
     3  ( 1 ) "*"   " " "*"   "*"     " "   " "   " " " " " "
-    4  ( 1 ) "*"   " " "*"   "*"     " "   " "   "*" " " " "
-    5  ( 1 ) "*"   "*" "*"   "*"     " "   " "   "*" " " " "
-    6  ( 1 ) "*"   "*" "*"   "*"     "*"   " "   "*" " " " "
-    7  ( 1 ) "*"   "*" "*"   "*"     "*"   "*"   "*" " " " "
-    8  ( 1 ) "*"   "*" "*"   "*"     "*"   "*"   "*" "*" " "
+    4  ( 1 ) "*"   " " "*"   "*"     " "   " "   " " " " "*"
+    5  ( 1 ) "*"   "*" "*"   "*"     " "   " "   " " " " "*"
+    6  ( 1 ) "*"   "*" "*"   "*"     " "   "*"   " " " " "*"
+    7  ( 1 ) "*"   "*" "*"   "*"     " "   "*"   " " "*" "*"
+    8  ( 1 ) "*"   "*" "*"   "*"     " "   "*"   "*" "*" "*"
     9  ( 1 ) "*"   "*" "*"   "*"     "*"   "*"   "*" "*" "*"
 
 #### Kryterium BIC
@@ -484,7 +762,7 @@ bs_mse <- sapply(1:9, function(i) {
 bs_mse
 ```
 
-    [1] 2406346 1834714 1570887 1537923 1504410 1497191 1495486 1495472 1495489
+    [1] 2406656 1835012 1571118 1600425 1567768 1571739 1603352 1577489 1589148
 
 ``` r
 plot(bs_mse, 
@@ -547,6 +825,15 @@ mean(tree.class != diamondsE$Cost[test])
 
 ``` r
 library(gam)
+```
+
+    Loading required package: splines
+
+    Loading required package: foreach
+
+    Loaded gam 1.16.1
+
+``` r
 fit.gam.bf <- gam(I(price > 10000) ~ s(table, df = 5) + cut + clarity + color, data = diamonds, family = binomial)
 summary(fit.gam.bf)
 ```
@@ -589,7 +876,6 @@ Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 ```
 
 ``` r
-#par(mfrow = c(1,4))
 plot(fit.gam.bf, col = "red")
 ```
 
