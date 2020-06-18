@@ -4,17 +4,19 @@ author: "Piotr Janczyk, Miłosz Janowski"
 output: html_document
 ---
 
+Analiza zbioru danych _diamonds_
+
+---
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(comment = '', echo = TRUE)
-```
-
-```{r}
-library(leaps)
 set.seed(1)
 ```
 
+## Zbiór danych
 
-# Zbiór danych
+[https://github.com/vincentarelbundock/Rdatasets/blob/master/csv/ggplot2/diamonds.csv](https://github.com/vincentarelbundock/Rdatasets/blob/master/csv/ggplot2/diamonds.csv)
+
 
 Cechy:  
 
@@ -29,6 +31,7 @@ Cechy:
 * `depth` — total depth percentage = `z / mean(x, y)` = `2 * z / (x + y)` (43–79)
 * `table` — width of top of diamond relative to widest point (43–95)
 
+
 ```{r}
 diamonds <- read.csv("diamonds.csv", header = TRUE, stringsAsFactors = TRUE)
 str(diamonds)
@@ -36,7 +39,7 @@ knitr::kable(head(diamonds))
 ```
 
 
-# Przygotowanie zbioru danych
+## Przygotowanie zbioru danych
 ```{r}
 # Usunięcie liczb porządkowych
 diamonds$X <- NULL
@@ -64,7 +67,7 @@ diamonds_num <- transform(diamonds,
                           cut = as.numeric(cut))
 ```
 
-# Podział na zbiór treningowy i testowy
+## Podział na zbiór treningowy i testowy
 
 ```{r}
 n <- nrow(diamonds)
@@ -90,7 +93,7 @@ fancy_plot <- function (x, y, ...) {
 ```
 
 
-# Regresja jednokrotna
+## Regresja jednokrotna
 
 Regresja liniowa, regresja wielomianowa, wygładzające funkcje sklejane
 
@@ -152,7 +155,7 @@ single_regression(diamonds$y, "y")
 single_regression(diamonds$z, "z")
 ```
 
-# Regresja liniowa wielokrotna
+## Regresja liniowa wielokrotna
 
 ```{r}
 lm_fit <- lm(price ~ ., data = diamonds_num, subset = train)
@@ -164,21 +167,22 @@ lm_mse <- mean((diamonds_num$price[test] - lm_pred) ^ 2)
 lm_mse
 ```
 
-# Wybór najlepszego podzbioru cech
+## Wybór najlepszego podzbioru cech
 
 ```{r}
+library(leaps)
 bs_fit <- regsubsets(price ~ ., data = diamonds_num, nvmax = Inf)
 bs_fit_summary <- summary(bs_fit)
 bs_fit_summary
 ```
 
-### Kryterium BIC
+#### Kryterium BIC
 
 ```{r}
 plot(bs_fit, scale = 'bic')
 ```
 
-### Przy pomocy metody zbioru walidacyjnego
+#### Przy pomocy metody zbioru walidacyjnego
 
 ```{r}
 predict.regsubsets <- function(object, newdata, id, ...) {
@@ -200,7 +204,7 @@ plot(bs_mse,
 points(which.min(bs_mse), min(bs_mse), col = "red", pch = 9)
 ```
 
-# Drzewo decyzyjne
+## Drzewo decyzyjne
 ```{r}
 library(tree)
 Cost <- factor(ifelse(diamonds$price <= 1000, "Cheap", ifelse(diamonds$price <= 10000, "Moderate", "Expansive")))
@@ -217,7 +221,7 @@ mean(tree.class != diamondsE$Cost[test])
 
 ```
 
-# Regresja logistyczna GAM
+## Regresja logistyczna GAM
 ```{r, warning=FALSE}
 library(gam)
 fit.gam.bf <- gam(I(price > 10000) ~ s(table, df = 5) + cut + clarity + color, data = diamonds, family = binomial)
